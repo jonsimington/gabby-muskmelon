@@ -3,6 +3,10 @@
 from joueur.base_ai import BaseAI
 import random
 
+from Piece import Chess_Piece
+from Player import Chess_Player
+from Game import Chess_Game
+
 
 class AI(BaseAI):
     """ The basic AI functions that are the same between games. """
@@ -15,12 +19,15 @@ class AI(BaseAI):
             str: The name of your Player.
         """
 
-        return "Chess Python Player"  # REPLACE THIS WITH YOUR TEAM NAME
+        return "pawnsftw-patrick_bremehr"  # REPLACE THIS WITH YOUR TEAM NAME
 
     def start(self):
         """ This is called once the game starts and your AI knows its playerID
         and game. You can initialize your AI here.
         """
+        self.game_obj = Chess_Game()
+        self.game_obj.read_fen(self.game.fen)
+
 
         # replace with your start logic
 
@@ -53,6 +60,7 @@ class AI(BaseAI):
         """
 
         # Here is where you'll want to code your AI.
+        
 
         # We've provided sample code that:
         #    1) prints the board to the console

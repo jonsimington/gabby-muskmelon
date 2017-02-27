@@ -35,8 +35,16 @@ class AI(BaseAI):
         """ This is called every time the game's state updates, so if you are
         tracking anything you can update it here.
         """
-
-        # replace with your game updated logic
+        """
+        if len(self.game.moves) > 0:
+            if self.game_obj.current_player == self.game_obj.players[0]:
+                print("Inside first")
+                self.game_obj.current_player = self.game_obj.players[1]
+            else:
+                print("inside seconds")
+                self.game_obj.current_player = self.game_obj.players[0]
+            print("------------------GAME UPDATED---------------CURRENT PLAYER: ", self.player.color)
+        """
 
     def end(self, won, reason):
         """ This is called when the game ends, you can clean up your data and
@@ -60,7 +68,7 @@ class AI(BaseAI):
         """
 
         # Here is where you'll want to code your AI.
-        
+
 
         # We've provided sample code that:
         #    1) prints the board to the console
@@ -79,10 +87,21 @@ class AI(BaseAI):
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
         # 4) make a random (and probably invalid) move.
-        random_piece = random.choice(self.player.pieces)
-        random_file = chr(ord("a") + random.randrange(8))
-        random_rank = random.randrange(8) + 1
-        random_piece.move(random_file, random_rank)
+        pawns = [piece for piece in self.player.pieces if piece.type == "Pawn"]
+        for p in pawns:
+            print(p.file, p.rank, p.type)
+
+        random_pawn = random.choice(pawns)
+        print(random_pawn.file, random_pawn.rank, random_pawn.type)
+        moves = self.game_obj.current_player.get_moves_piece(random_pawn)
+        for m in moves:
+            print(m.from_file, m.from_rank, m.to_file, m.to_rank)
+        random_move = random.choice(moves)
+        random_pawn.move(random_move.to_file, random_move.to_rank)
+        # random_piece = random.choice(self.player.pieces)
+        # random_file = chr(ord("a") + random.randrange(8))
+        # random_rank = random.randrange(8) + 1
+        # random_piece.move(random_file, random_rank)
 
         return True  # to signify we are done with our turn.
 

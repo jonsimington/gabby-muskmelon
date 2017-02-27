@@ -2,10 +2,10 @@
 # Piece Class
 
 class Chess_Piece:
-	def __init__(self, file, rank, owner, p_type):
+	def __init__(self, file, rank, owner, type):
 		self.file = file
 		self.rank = rank
-		self.p_type = p_type
+		self.type = type
 		self.owner = owner 
 		self.captured = False
 

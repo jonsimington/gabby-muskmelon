@@ -13,15 +13,17 @@ class Chess_Game:
 		self.current_player = None
 		self.current_turn = 0
 		self.fen = ""
+		self.players = []
 
 
 	def read_fen(self, fen_str):
 		self.fen = fen_str
 		fen_data = re.split(' |/', fen_str)
-		player_1 = Chess_Player("Player 1", "white")
-		player_2 = Chess_Player("Player 2", "black")
+		player_1 = Chess_Player("White", "Player 1")
+		player_2 = Chess_Player("Black", "Player 2")
 		player_1.set_opponent(player_2)
 		player_2.set_opponent(player_1)
+		self.players = [player_1, player_2]
 		files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
 		for i in range(8):

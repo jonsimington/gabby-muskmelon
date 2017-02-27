@@ -25,6 +25,37 @@ class Chess_Player:
 
 	def get_moves_piece(self, piece):
 		possible_moves = []
+
+		# If in_check == True, only possible moves are to take piece causing check if only one, or to block that piece from check
+		# Either way, we need to identify what piece is causing check
+
+		# Also need to be able to check if move will open King to check
+		
+		"""
+		# Find Check causing piece(s)
+		if self.in_check:
+			# Loop through opponent pieces and check pieces in danger, relative to king?
+			# Find King Piece
+			for piece in self.pieces:
+				if piece.type == "King":
+					king_piece = piece
+					break
+
+			for piece in self.opponent.pieces:
+				if piece.type == "Pawn":
+
+
+					# Check diagonals in one space
+				elif piece.type == "Knight":
+					# Check 8 jumps
+				elif piece.type == "Bishop":
+					# Check diagonals
+				elif piece.type == "Queen":
+					# Check EVERYTHING
+				elif piece.type == "Rook":
+					# Check straight lines
+
+		"""
 		if piece.type == "Pawn":
 			# Normal
 			if self.check_space(piece.file, piece.rank + self.rank_direction)[0]:
@@ -310,7 +341,7 @@ class Chess_Player:
 				return (False, 0)
 		for piece in self.opponent.pieces:
 			if piece.rank == rank and piece.file == file:
-				return (False, 1)
+				return (False, 1, piece.type)
 		return (True, 0)
 
 	def move_piece(self, piece, file, rank, promotion):

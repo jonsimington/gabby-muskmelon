@@ -27,7 +27,7 @@ class Chess_Game:
 			self.player = player_1
 		elif color == "Black":
 			self.player = player_2
-		
+
 		files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
 		for i in range(8):
@@ -58,8 +58,3 @@ class Chess_Game:
 					self.pieces.append(piece)
 				else:
 					file_offset += int(fen_data[i][j])
-
-		if fen_data[8] == 'w':
-			self.current_player = player_1
-		else:
-			self.current_player = player_2

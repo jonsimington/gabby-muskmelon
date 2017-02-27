@@ -37,6 +37,7 @@ class AI(BaseAI):
         """
         self.game_obj.player.opponent.pieces = self.player.opponent.pieces
         self.game_obj.player.pieces = self.player.pieces
+        self.game_obj.player.in_check = self.player.in_check
         # Find opponent piece(s) that moved and update state
 
 

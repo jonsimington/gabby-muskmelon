@@ -36,9 +36,26 @@ class AI(BaseAI):
         tracking anything you can update it here.
         """
         self.game_obj.player.opponent.pieces = self.player.opponent.pieces
-        self.game_obj.player.pieces = self.player.pieces
+        #self.game_obj.player.pieces = self.player.pieces
         self.game_obj.player.in_check = self.player.in_check
-        # Find opponent piece(s) that moved and update state
+
+        # Check if a piece was captured
+        if len(self.game.moves) > 0 and self.game.current_player == self.player:
+            capture_move = self.game.moves[-1]
+            captured_piece = capture_move.captured
+            if captured_piece != None:
+                print("PIECE WAS CAPTURED")
+                print(capture_move.to_file, str(capture_move.to_rank))
+                # Find and Remove piece from our list
+                for piece in self.game_obj.player.pieces:
+                    if piece.type == captured_piece.type and piece.file == captured_piece.file and piece.rank == captured_piece.rank:
+                        print("FOUND CAPTURED PIECE")
+                        self.game_obj.player.pieces[:] = [p for p in self.game_obj.player.pieces if not (p.file == capture_move.to_file and p.rank == capture_move.to_rank)]
+        
+
+
+
+        self.game_obj.player.update_threat_squares()
 
 
     def end(self, won, reason):
@@ -73,6 +90,10 @@ class AI(BaseAI):
 
         # 1) print the board to the console
         self.print_current_board()
+        
+        #print("Threat Squares")
+        #for k in self.game_obj.player.get_threat_squares():
+        #    print(k)
 
         # 2) print the opponent's last move to the console
         if len(self.game.moves) > 0:
@@ -84,14 +105,19 @@ class AI(BaseAI):
         # 4) make a random (and probably invalid) move.
         moves = []
         while len(moves) == 0:
-            random_piece = random.choice(self.player.pieces)
+            random_piece = random.choice(self.game_obj.player.pieces)
+            #print("PIECE BEFORE")
+            #print(random_piece.type, random_piece.rank, str(random_piece.file))
             moves = self.game_obj.player.get_moves_piece(random_piece)
         
         random_move = random.choice(moves)
+        #pritn("PIECE AFTER")
+        #print()
 
             # Update game_obj with move
 
             # Find same piece
+        #self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, "")
         """
         for piece in self.game_obj.player.pieces:
             if piece.type != random_piece.type:
@@ -102,7 +128,27 @@ class AI(BaseAI):
                 continue
             self.game_obj.player.move_piece(piece, random_move.to_file, random_move.to_rank, "")
         """
-        random_piece.move(random_move.to_file, random_move.to_rank)
+
+        # Find Game Piece to Move
+        print("Looking for Game Piece")
+        print(random_piece.type, random_piece.file, str(random_piece.rank))
+        for piece in self.player.pieces:
+            #print(piece.type, piece.file, str(piece.rank))
+            if piece.type != random_piece.type:
+                continue
+            if piece.rank != random_piece.rank:
+                continue
+            if piece.file != random_piece.file:
+                continue
+            print("PIECE FOUND")
+            piece.move(random_move.to_file, random_move.to_rank)
+            break
+
+
+        self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, "")
+
+        
+        #random_piece.move(random_move.to_file, random_move.to_rank)
 
         
         # random_piece = random.choice(self.player.pieces)

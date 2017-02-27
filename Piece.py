@@ -9,7 +9,16 @@ class Chess_Piece:
 		self.owner = owner 
 		self.captured = False
 
-	def move_piece(self, file, rank, promotion):
+	def move_piece(self, file, rank, promotion=""):
 		self.file = file
 		self.rank = rank
 		# print("MOVING", self.type, "to " file, rank)
+
+	def check_equal(self, other):
+		if self.file != other.file:
+			return False
+		if self.rank != other.rank:
+			return False
+		if self.type != other.type:
+			return False
+		return True

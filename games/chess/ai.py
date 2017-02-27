@@ -26,7 +26,7 @@ class AI(BaseAI):
         and game. You can initialize your AI here.
         """
         self.game_obj = Chess_Game()
-        self.game_obj.read_fen(self.game.fen)
+        self.game_obj.read_fen(self.game.fen, self.player.color)
 
 
         # replace with your start logic
@@ -35,16 +35,10 @@ class AI(BaseAI):
         """ This is called every time the game's state updates, so if you are
         tracking anything you can update it here.
         """
-        """
-        if len(self.game.moves) > 0:
-            if self.game_obj.current_player == self.game_obj.players[0]:
-                print("Inside first")
-                self.game_obj.current_player = self.game_obj.players[1]
-            else:
-                print("inside seconds")
-                self.game_obj.current_player = self.game_obj.players[0]
-            print("------------------GAME UPDATED---------------CURRENT PLAYER: ", self.player.color)
-        """
+        self.game_obj.player.opponent.pieces = self.player.opponent.pieces
+        self.game_obj.player.pieces = self.player.pieces
+        # Find opponent piece(s) that moved and update state
+
 
     def end(self, won, reason):
         """ This is called when the game ends, you can clean up your data and
@@ -87,17 +81,29 @@ class AI(BaseAI):
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
         # 4) make a random (and probably invalid) move.
-        pawns = [piece for piece in self.player.pieces if piece.type == "Pawn"]
-        for p in pawns:
-            print(p.file, p.rank, p.type)
-
-        random_pawn = random.choice(pawns)
-        print(random_pawn.file, random_pawn.rank, random_pawn.type)
-        moves = self.game_obj.current_player.get_moves_piece(random_pawn)
-        for m in moves:
-            print(m.from_file, m.from_rank, m.to_file, m.to_rank)
+        moves = []
+        while len(moves) == 0:
+            random_piece = random.choice(self.player.pieces)
+            moves = self.game_obj.player.get_moves_piece(random_piece)
+        
         random_move = random.choice(moves)
-        random_pawn.move(random_move.to_file, random_move.to_rank)
+
+            # Update game_obj with move
+
+            # Find same piece
+        """
+        for piece in self.game_obj.player.pieces:
+            if piece.type != random_piece.type:
+                continue
+            if piece.rank != random_piece.rank:
+                continue
+            if piece.file != random_piece.file:
+                continue
+            self.game_obj.player.move_piece(piece, random_move.to_file, random_move.to_rank, "")
+        """
+        random_piece.move(random_move.to_file, random_move.to_rank)
+
+        
         # random_piece = random.choice(self.player.pieces)
         # random_file = chr(ord("a") + random.randrange(8))
         # random_rank = random.randrange(8) + 1

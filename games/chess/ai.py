@@ -78,7 +78,7 @@ class AI(BaseAI):
 
         # Here is where you'll want to code your AI.
 
-        # 1) print the board to the console
+        # 1)print the board to the console
         self.print_current_board()
         
         #print("Threat Squares")
@@ -86,8 +86,10 @@ class AI(BaseAI):
         #    print(k)
 
         # 2) print the opponent's last move to the console
+        last_move = None
         if len(self.game.moves) > 0:
             print("Opponent's Last Move: '" + self.game.moves[-1].san + "'")
+            last_move = self.game.moves[-1]
 
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
@@ -96,13 +98,14 @@ class AI(BaseAI):
         moves = []
         pieces_checked = []
         index = 0
+
         while len(moves) == 0:
             random_piece = random.choice(self.game_obj.player.pieces)
             while random_piece in pieces_checked and index < len(self.game_obj.player.pieces):
                 random_piece = random.choice(self.game_obj.player.pieces)
             pieces_checked.append(random_piece)
             index += 1
-            moves = self.game_obj.player.get_moves_piece(random_piece)
+            moves = self.game_obj.player.get_moves_piece(random_piece, last_move)
         
         random_move = random.choice(moves)
 
@@ -121,6 +124,20 @@ class AI(BaseAI):
                 piece.move(random_move.to_file, random_move.to_rank)
             break
 
+        # Check for castling
+        if random_move.piece.type == "King":
+            if ord(random_move.from_file) - ord(random_move.to_file) == 2:
+                # Left-side castling, find rook to move as well
+                for r_piece in self.game_obj.player.pieces:
+                    if r_piece.type == "Rook":
+                        if r_piece.file == 'a':
+                            self.game_obj.player.move_piece(r_piece, 'd', r_piece.rank, "")
+            elif ord(random_move.to_file) - ord(random_move.from_file) == 2:
+                # Right side castling, find rook to move as well
+                for r_piece in self.game_obj.player.pieces:
+                    if r_piece.type == "Rook":
+                        if r_piece.file == 'h':
+                            self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")
         self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, random_move.promotion)
 
         return True  # to signify we are done with our turn.

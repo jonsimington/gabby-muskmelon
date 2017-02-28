@@ -8,8 +8,9 @@ class Chess_Piece:
 		self.type = type
 		self.owner = owner 
 		self.captured = False
+		self.has_moved = False
 
-	def move_piece(self, file, rank, promotion=""):
+	def move_piece(self, file, rank, promotion="", undo_has_moved=False):
 		self.file = file
 		self.rank = rank
 		if promotion != "":
@@ -18,6 +19,11 @@ class Chess_Piece:
 		# UNDO a promotion
 		if promotion == "Undo":
 			self.type = "Pawn"
+		if not self.has_moved:
+			self.has_moved = True
+		elif undo_has_moved:
+			self.has_moved = False
+
 
 	def check_equal(self, other):
 		if self.file != other.file:

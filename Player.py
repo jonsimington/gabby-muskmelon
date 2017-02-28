@@ -21,57 +21,22 @@ class Chess_Player:
 	def set_opponent(self, opponent):
 		self.opponent = opponent
 
-	def get_possible_moves(self):
-		pass
-
 	def get_moves_piece(self, piece, threat_search=False):
-		#print("CALLING GET MOVES WITH threat_search=" + str(threat_search))
 		possible_moves = []
-
-		# If in_check == True, only possible moves are to take piece causing check if only one, or to block that piece from check
-		# Either way, we need to identify what piece is causing check
-
-		# Also need to be able to check if move will open King to check\
-
-		# Function to get 'threatened' squares
-		
-		"""
-		# Find Check causing piece(s)
-		if self.in_check:
-			# Loop through opponent pieces and check pieces in danger, relative to king?
-			# Find King Piece
-			for piece in self.pieces:
-				if piece.type == "King":
-					king_piece = piece
-					break
-
-			for piece in self.opponent.pieces:
-				if piece.type == "Pawn":
-
-
-					# Check diagonals in one space
-				elif piece.type == "Knight":
-					# Check 8 jumps
-				elif piece.type == "Bishop":
-					# Check diagonals
-				elif piece.type == "Queen":
-					# Check EVERYTHING
-				elif piece.type == "Rook":
-					# Check straight lines
-
-		"""
-		#checking_piece = None
-		#if self.in_check:
-		#	checking_piece = self.get_checking_piece()
-
 		if piece.type == "Pawn":
 			# Normal
 			if self.check_space(piece.file, piece.rank + self.rank_direction)[0]:
 				# Promotions
 				if self.color == "White" and piece.rank == 7:
-					pass
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Rook"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Bishop"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Queen"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Knight"))
 				elif self.color == "Black" and piece.rank == 2:
-					pass
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Rook"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Bishop"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Queen"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, "Knight"))
 				else:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + self.rank_direction, ""))
 
@@ -81,31 +46,77 @@ class Chess_Player:
 						possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + 2 * self.rank_direction, ""))
 
 			# Check diagonal spaces
-			space = self.check_space(chr(ord(piece.file) + 1), piece.rank + self.rank_direction)
-			if space[1] == 1:
-				if self.color == "White" and piece.rank == 7:
-					pass
-				elif self.color == "Black" and piece.rank == 2:
-					pass
-				else:
-					move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "")
-					move.set_piece_captured(space[2])
-					possible_moves.append(move)
-			elif space[1] == 0 and threat_search:
-				possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "", note="blocked"))
+			if piece.file != 'h': 
+				space = self.check_space(chr(ord(piece.file) + 1), piece.rank + self.rank_direction)
+				if space[1] == 1:
+					if self.color == "White" and piece.rank == 7:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Queen")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Rook")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Bishop")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Knight")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+					elif self.color == "Black" and piece.rank == 2:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Queen")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Rook")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Bishop")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "Knight")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+					else:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+				elif space[1] == 0 and threat_search:
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "", note="blocked"))
 
-			space = self.check_space(chr(ord(piece.file) - 1), piece.rank + self.rank_direction)
-			if space[1] == 1:
-				if self.color == "White" and piece.rank == 7:
-					pass
-				elif self.color == "Black" and piece.rank == 2:
-					pass
-				else:
-					move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "")
-					move.set_piece_captured(space[2])
-					possible_moves.append(move)
-			elif space[1] == 0 and threat_search:
-				possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "", note="blocked"))
+			if piece.file != 'a':
+				space = self.check_space(chr(ord(piece.file) - 1), piece.rank + self.rank_direction)
+				if space[1] == 1:
+					if self.color == "White" and piece.rank == 7:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Queen")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Rook")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Bishop")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Knight")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+					elif self.color == "Black" and piece.rank == 2:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Queen")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Rook")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Bishop")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "Knight")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+					else:
+						move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "")
+						move.set_piece_captured(space[2])
+						possible_moves.append(move)
+				elif space[1] == 0 and threat_search:
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "", note="blocked"))
 
 			# En Passante--------------------
 
@@ -146,12 +157,12 @@ class Chess_Player:
 				if space[0]:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, ""))
 				elif space[1] == 1:
-					move = Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "")
+					move = Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "")
 					move.set_piece_captured(space[2])
 					possible_moves.append(move)
 					break
 				elif space[1] == 0 and threat_search:
-					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "", note="blocked"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "", note="blocked"))
 					break
 				else:
 					break
@@ -161,12 +172,12 @@ class Chess_Player:
 				if space[0]:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, ""))
 				elif space[1] == 1:
-					move = Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "")
+					move = Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "")
 					move.set_piece_captured(space[2])
 					possible_moves.append(move)
 					break
 				elif space[1] == 0 and threat_search:
-					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "", note="blocked"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "", note="blocked"))
 					break
 				else:
 					break
@@ -445,12 +456,12 @@ class Chess_Player:
 				if space[0]:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, ""))
 				elif space[1] == 1:
-					move = Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "")
+					move = Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "")
 					move.set_piece_captured(space[2])
 					possible_moves.append(move)
 					break
 				elif space[1] == 0 and threat_search:
-					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "", note="blocked"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "", note="blocked"))
 				else:
 					break
 
@@ -459,12 +470,12 @@ class Chess_Player:
 				if space[0]:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, ""))
 				elif space[1] == 1:
-					move = Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "")
+					move = Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "")
 					move.set_piece_captured(space[2])
 					possible_moves.append(move)
 					break
 				elif space[1] == 0 and threat_search:
-					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, rank, "", note="blocked"))
+					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(file), piece.rank, "", note="blocked"))
 					break
 				else:
 					break
@@ -497,33 +508,35 @@ class Chess_Player:
 		# Look through moves, if one puts King in check, it's not valid
 		# Use game state, but make sure to change back
 		if not threat_search:
-			#print("BEFORE")
-			#for move in possible_moves:
-		#		move.output_string()
-			for move in possible_moves:
+			for x in range(len(possible_moves) - 1, -1, -1):
 				# Make move
-				self.move_piece(move.piece, move.to_file, move.to_rank, "")
-				check_caused = king_str in self.get_threat_squares()
-				self.move_piece(move.piece, move.from_file, move.from_rank, "")
+				move = possible_moves[x]
+				self.move_piece(move.piece, move.to_file, move.to_rank, move.promotion)
+				king_str = king_piece.file + str(king_piece.rank)
+				threats = self.get_threat_squares()
+				
+				check_caused = king_str in threats
+				if move.promotion != "":
+					self.move_piece(move.piece, move.from_file, move.from_rank, "Undo")
+				else:
+					self.move_piece(move.piece, move.from_file, move.from_rank, "")
 				# Check if threat spaces include king space
 				if check_caused:
 					# Remove move from possible moves
-					possible_moves[:] = [m for m in possible_moves if not m.check_equal(move)]
-			#print("AFTER")
-			#for move in possible_moves:
-			#	move.output_string()
-
+					del possible_moves[x]
 		
 		return possible_moves
 
 	def check_space(self, file, rank):
-		# print("Checking ", file, rank)
 		for piece in self.pieces:
 			if piece.rank == rank and piece.file == file:
+				#print("BLOCKED")
 				return (False, 0)
 		for piece in self.opponent.pieces:
 			if piece.rank == rank and piece.file == file:
+				#print("BLOCKED")
 				return (False, 1, piece)
+		#print("OPEN")
 		return (True, 0)
 
 	def move_piece(self, piece, file, rank, promotion):
@@ -533,14 +546,15 @@ class Chess_Player:
 		threats = {}
 		for piece in self.opponent.pieces:
 			piece_moves = self.opponent.get_moves_piece(piece, threat_search=True)
-			# capture_move = [move for move in piece_moves if move.captured != None]
 			for move in piece_moves:
+				#move.output_string()
 				if piece.type != "Pawn":
 					space_str = move.to_file + str(move.to_rank)
 					if not space_str in threats:
 						threats[space_str] = piece
 				elif piece.type == "Pawn":
-					if move.captured != None:
+					# IF move was diagonal
+					if move.to_file != move.from_file and move.to_rank != move.from_rank:
 						space_str = move.to_file + str(move.to_rank)
 						if not space_str in threats:
 							threats[space_str] = piece
@@ -558,7 +572,6 @@ class Chess_Player:
 				space_str = piece.file + str(piece.rank)
 				break
 		threats = self.get_threat_squares()
-		#print(threats[space_str].type, threats[space_str].file, str(threats[space_str].rank))
 		return threats[space_str]
 
 

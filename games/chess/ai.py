@@ -44,12 +44,9 @@ class AI(BaseAI):
             capture_move = self.game.moves[-1]
             captured_piece = capture_move.captured
             if captured_piece != None:
-                print("PIECE WAS CAPTURED")
-                print(capture_move.to_file, str(capture_move.to_rank))
                 # Find and Remove piece from our list
                 for piece in self.game_obj.player.pieces:
-                    if piece.type == captured_piece.type and piece.file == captured_piece.file and piece.rank == captured_piece.rank:
-                        print("FOUND CAPTURED PIECE")
+                    if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
                         self.game_obj.player.pieces[:] = [p for p in self.game_obj.player.pieces if not (p.file == capture_move.to_file and p.rank == capture_move.to_rank)]
         
 
@@ -81,13 +78,6 @@ class AI(BaseAI):
 
         # Here is where you'll want to code your AI.
 
-
-        # We've provided sample code that:
-        #    1) prints the board to the console
-        #    2) prints the opponent's last move to the console
-        #    3) prints how much time remaining this AI has to calculate moves
-        #    4) makes a random (and probably invalid) move.
-
         # 1) print the board to the console
         self.print_current_board()
         
@@ -102,36 +92,21 @@ class AI(BaseAI):
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
-        # 4) make a random (and probably invalid) move.
+        # 4) make a random valid move.
         moves = []
+        pieces_checked = []
+        index = 0
         while len(moves) == 0:
             random_piece = random.choice(self.game_obj.player.pieces)
-            #print("PIECE BEFORE")
-            #print(random_piece.type, random_piece.rank, str(random_piece.file))
+            while random_piece in pieces_checked and index < len(self.game_obj.player.pieces):
+                random_piece = random.choice(self.game_obj.player.pieces)
+            pieces_checked.append(random_piece)
+            index += 1
             moves = self.game_obj.player.get_moves_piece(random_piece)
         
         random_move = random.choice(moves)
-        #pritn("PIECE AFTER")
-        #print()
 
-            # Update game_obj with move
-
-            # Find same piece
-        #self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, "")
-        """
-        for piece in self.game_obj.player.pieces:
-            if piece.type != random_piece.type:
-                continue
-            if piece.rank != random_piece.rank:
-                continue
-            if piece.file != random_piece.file:
-                continue
-            self.game_obj.player.move_piece(piece, random_move.to_file, random_move.to_rank, "")
-        """
-
-        # Find Game Piece to Move
-        print("Looking for Game Piece")
-        print(random_piece.type, random_piece.file, str(random_piece.rank))
+        # Find Framework Game Piece to Move
         for piece in self.player.pieces:
             #print(piece.type, piece.file, str(piece.rank))
             if piece.type != random_piece.type:
@@ -140,21 +115,13 @@ class AI(BaseAI):
                 continue
             if piece.file != random_piece.file:
                 continue
-            print("PIECE FOUND")
-            piece.move(random_move.to_file, random_move.to_rank)
+            if random_move.promotion != "":
+                piece.move(random_move.to_file, random_move.to_rank, random_move.promotion)
+            else:
+                piece.move(random_move.to_file, random_move.to_rank)
             break
 
-
-        self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, "")
-
-        
-        #random_piece.move(random_move.to_file, random_move.to_rank)
-
-        
-        # random_piece = random.choice(self.player.pieces)
-        # random_file = chr(ord("a") + random.randrange(8))
-        # random_rank = random.randrange(8) + 1
-        # random_piece.move(random_file, random_rank)
+        self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, random_move.promotion)
 
         return True  # to signify we are done with our turn.
 

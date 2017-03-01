@@ -123,11 +123,12 @@ class AI(BaseAI):
             index += 1
             moves = self.game_obj.player.get_moves_piece(random_piece, last_move)
         
-        print("Choosing to move piece: ", random_piece.type, "at ", random_piece.file + str(random_piece.rank))
         print("Possible Moves:")
         for m in moves:
             m.output_string()
         random_move = random.choice(moves)
+        print("Chosen Move:")
+        random_move.output_string()
 
         # Find Framework Game Piece to Move
         for piece in self.player.pieces:

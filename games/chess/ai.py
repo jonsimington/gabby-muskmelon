@@ -39,19 +39,34 @@ class AI(BaseAI):
         #self.game_obj.player.pieces = self.player.pieces
         self.game_obj.player.in_check = self.player.in_check
 
-        # Check if a piece was captured
+        # Check if one of your own pieces were captured
         if len(self.game.moves) > 0 and self.game.current_player == self.player:
             capture_move = self.game.moves[-1]
             captured_piece = capture_move.captured
             if captured_piece != None:
                 # Find and Remove piece from our list
-                for piece in self.game_obj.player.pieces:
-                    if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
-                        self.game_obj.player.pieces[:] = [p for p in self.game_obj.player.pieces if not (p.file == capture_move.to_file and p.rank == capture_move.to_rank)]
-        
-
-
-
+                # En Passant Checking
+                if captured_piece.type == "Pawn" and len(self.game.moves) > 1:
+                    prev_move = self.game.moves[-2]
+                    if abs(prev_move.to_rank - prev_move.from_rank) == 2 and abs(ord(prev_move.to_file) - ord(capture_move.from_file)) == 1 and prev_move.to_rank == capture_move.from_rank:
+                        for x in range(len(self.game_obj.player.pieces)):
+                            piece = self.game_obj.player.pieces[x]
+                            if piece.type == captured_piece.type and piece.file == prev_move.to_file and piece.rank == prev_move.to_rank:
+                                del self.game_obj.player.pieces[x]
+                                break
+                    else:
+                        for x in range(len(self.game_obj.player.pieces)):
+                            piece = self.game_obj.player.pieces[x]    
+                            if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
+                                del self.game_obj.player.pieces[x]
+                                break  
+                else:
+                    for x in range(len(self.game_obj.player.pieces)):
+                        piece = self.game_obj.player.pieces[x]    
+                        if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
+                            del self.game_obj.player.pieces[x]
+                            break
+                        
         self.game_obj.player.update_threat_squares()
 
 
@@ -100,6 +115,7 @@ class AI(BaseAI):
         index = 0
 
         while len(moves) == 0:
+            #random_piece = random.choice([piece for piece in self.game_obj.player.pieces if piece.type =="King"])
             random_piece = random.choice(self.game_obj.player.pieces)
             while random_piece in pieces_checked and index < len(self.game_obj.player.pieces):
                 random_piece = random.choice(self.game_obj.player.pieces)
@@ -107,6 +123,10 @@ class AI(BaseAI):
             index += 1
             moves = self.game_obj.player.get_moves_piece(random_piece, last_move)
         
+        print("Choosing to move piece: ", random_piece.type, "at ", random_piece.file + str(random_piece.rank))
+        print("Possible Moves:")
+        for m in moves:
+            m.output_string()
         random_move = random.choice(moves)
 
         # Find Framework Game Piece to Move
@@ -137,7 +157,8 @@ class AI(BaseAI):
                 for r_piece in self.game_obj.player.pieces:
                     if r_piece.type == "Rook":
                         if r_piece.file == 'h':
-                            self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")
+                            self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")   
+
         self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, random_move.promotion)
 
         return True  # to signify we are done with our turn.

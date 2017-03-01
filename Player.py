@@ -82,12 +82,11 @@ class Chess_Player:
 				elif space[1] == 0 and threat_search:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "", note="blocked"))
 
+				# En passant to the right
 				if last_move != None:
 					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
 						if last_move.to_rank == piece.rank and ord(last_move.to_file) - ord(piece.file) == 1:
-							pass
-							# En passant to the left
-							# Move pawn diagonally to the left, remove enemy pawn
+							possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, ""))
 
 
 			if piece.file != 'a':
@@ -126,12 +125,11 @@ class Chess_Player:
 				elif space[1] == 0 and threat_search:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "", note="blocked"))
 
+				# En passant to the left
 				if last_move != None:
 					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
 						if last_move.to_rank == piece.rank and ord(piece.file) - ord(last_move.to_file) == 1:
-							pass
-							# En passant to the right
-							# Move pawn diagonally to the right, remove enemy pawn
+							possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, ""))
 
 
 		elif piece.type == "Rook":

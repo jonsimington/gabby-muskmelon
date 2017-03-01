@@ -29,7 +29,6 @@ class Chess_Game:
 			self.player = player_2
 
 		files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-
 		for i in range(8):
 			file_offset = 0
 			for j in range(len(fen_data[i])):
@@ -57,4 +56,4 @@ class Chess_Game:
 
 					self.pieces.append(piece)
 				else:
-					file_offset += int(fen_data[i][j])
+					file_offset += int(fen_data[i][j]) - 1

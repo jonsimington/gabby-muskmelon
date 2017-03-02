@@ -86,7 +86,13 @@ class Chess_Player:
 				if last_move != None:
 					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
 						if last_move.to_rank == piece.rank and ord(last_move.to_file) - ord(piece.file) == 1:
-							possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, ""))
+							move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "")
+							# Find enemy pawn that would be captured
+							for opp_piece in self.opponent.pieces:
+								if opp_piece.file == chr(ord(piece.file) + 1) and opp_piece.rank == piece.rank + self.rank_direction:
+									move.set_piece_captured = opp_piece
+									break
+							possible_moves.append(move)
 			if piece.file != 'a':
 				space = self.check_space(chr(ord(piece.file) - 1), piece.rank + self.rank_direction)
 				if space[1] == 1:
@@ -127,7 +133,13 @@ class Chess_Player:
 				if last_move != None:
 					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
 						if last_move.to_rank == piece.rank and ord(piece.file) - ord(last_move.to_file) == 1:
-							possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, ""))
+							move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "")
+							# Find enemy pawn that would be captured
+							for opp_piece in self.opponent.pieces:
+								if opp_piece.file == chr(ord(piece.file) + 1) and opp_piece.rank == piece.rank + self.rank_direction:
+									move.set_piece_captured = opp_piece
+									break
+							possible_moves.append(move)
 		elif piece.type == "Rook":
 			self.find_verhor_moves(possible_moves, threat_search, piece)
 		elif piece.type == "Knight":
@@ -211,10 +223,18 @@ class Chess_Player:
 		if not threat_search:
 			for x in range(len(possible_moves) - 1, -1, -1):
 				# Make move
-				#----------------THIS NEEDS TO remove captured pieces, including en passant
 				move = possible_moves[x]
 				init_pos = move.piece.has_moved
 				self.move_piece(move.piece, move.to_file, move.to_rank, move.promotion)
+				# Remove captured piece
+				captured_piece = None
+				if move.captured != None:
+					for i in range(len(self.opponent.pieces)):
+						opp_piece = self.opponent.pieces[i]
+						if opp_piece.file == move.captured.file and opp_piece.rank == move.captured.rank:
+							captured_piece = move.captured
+							del self.opponent.pieces[i]
+							break
 				
 				# Determine threatened squares
 				king_str = king_piece.file + str(king_piece.rank)
@@ -232,6 +252,11 @@ class Chess_Player:
 						self.move_piece(move.piece, move.from_file, move.from_rank, "", undo_has_moved=True)
 					else:
 						self.move_piece(move.piece, move.from_file, move.from_rank, "")
+				# Replace any captured pieces
+				
+				if captured_piece != None:
+					self.opponent.pieces.append(captured_piece)
+				
 				# Check if threat spaces include king space
 				if check_caused:
 					# Remove move from possible moves

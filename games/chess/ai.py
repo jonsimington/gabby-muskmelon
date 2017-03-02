@@ -27,20 +27,20 @@ class AI(BaseAI):
         """
         self.game_obj = Chess_Game()
         self.game_obj.read_fen(self.game.fen, self.player.color)
+        self.game_obj.player.opponent.pieces = []
+        for piece in self.player.opponent.pieces:
+            tmp_piece = Chess_Piece(piece.file, piece.rank, self.player.opponent, piece.type)
+            self.game_obj.player.opponent.pieces.append(tmp_piece)
 
-
-        # replace with your start logic
 
     def game_updated(self):
         """ This is called every time the game's state updates, so if you are
         tracking anything you can update it here.
         """
-        self.game_obj.player.opponent.pieces = self.player.opponent.pieces
-        #self.game_obj.player.pieces = self.player.pieces
         self.game_obj.player.in_check = self.player.in_check
 
-        # Check if one of your own pieces were captured
         if len(self.game.moves) > 0 and self.game.current_player == self.player:
+            # Check if one of your own pieces were captured
             capture_move = self.game.moves[-1]
             captured_piece = capture_move.captured
             if captured_piece != None:
@@ -66,7 +66,27 @@ class AI(BaseAI):
                         if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
                             del self.game_obj.player.pieces[x]
                             break
-                        
+            
+            for piece in self.game_obj.player.opponent.pieces:
+                if piece.rank == capture_move.from_rank and piece.file == capture_move.from_file:
+                    # Update moved piece on our end
+                    self.game_obj.player.opponent.move_piece(piece, capture_move.to_file, capture_move.to_rank, capture_move.promotion)
+                    if piece.type == "King":
+                        # Castling
+                        if ord(capture_move.to_file) - ord(capture_move.from_file) == 2:
+                            for rook in self.game_obj.player.opponent.pieces:
+                                if rook.type == "Rook":
+                                    if rook.file == 'h' and rook.rank == piece.rank:
+                                        self.game_obj.player.opponent.move_piece(rook, chr(ord(piece.file) - 1), piece.rank, "")
+                                        break
+                        elif ord(capture_move.from_file) - ord(capture_move.to_file) == 2:
+                            for rook in self.game_obj.player.opponent.pieces:
+                                if rook.type == "Rook":
+                                    if rook.file == 'a' and rook.rank == piece.rank:
+                                        self.game_obj.player.opponent.move_piece(rook, chr(ord(piece.file) + 1), piece.rank, "")
+                                        break
+                    break
+ 
         self.game_obj.player.update_threat_squares()
 
 
@@ -132,7 +152,6 @@ class AI(BaseAI):
 
         # Find Framework Game Piece to Move
         for piece in self.player.pieces:
-            #print(piece.type, piece.file, str(piece.rank))
             if piece.type != random_piece.type:
                 continue
             if piece.rank != random_piece.rank:
@@ -161,6 +180,15 @@ class AI(BaseAI):
                             self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")   
 
         self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, random_move.promotion)
+        if random_move.captured != None:
+            captured_piece = random_move.captured
+            for x in range(len(self.game_obj.player.opponent.pieces)):
+                piece = self.game_obj.player.opponent.pieces[x]
+                if piece.type == captured_piece.type and piece.rank == captured_piece.rank and piece.file == captured_piece.file:
+                    del self.game_obj.player.opponent.pieces[x]
+                    break
+
+
 
         return True  # to signify we are done with our turn.
 

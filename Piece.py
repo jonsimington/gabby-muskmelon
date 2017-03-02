@@ -24,7 +24,6 @@ class Chess_Piece:
 		elif undo_has_moved:
 			self.has_moved = False
 
-
 	def check_equal(self, other):
 		if self.file != other.file:
 			return False

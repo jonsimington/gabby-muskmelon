@@ -10,11 +10,9 @@ class Chess_Game:
 	def __init__(self):
 		self.moves = []
 		self.pieces = []
-		# self.current_player = None
 		self.current_turn = 0
 		self.fen = ""
 		self.player = None
-
 
 	def read_fen(self, fen_str, color):
 		self.fen = fen_str
@@ -25,8 +23,14 @@ class Chess_Game:
 		player_2.set_opponent(player_1)
 		if color == "White":
 			self.player = player_1
+			if fen_data[8] == 'w':
+				if fen_data[10] != '-':
+					self.player.en_passant_target = fen_data[10]
 		elif color == "Black":
 			self.player = player_2
+			if fen_data[8] == 'b':
+				if fen_data[10] != '-':
+					self.player.en_passant_target = fen_data[10]
 
 		files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 		for i in range(8):
@@ -57,3 +61,29 @@ class Chess_Game:
 					self.pieces.append(piece)
 				else:
 					file_offset += int(fen_data[i][j]) - 1
+
+		if color == 'White':
+			relevant = [letter for letter in fen_data[9] if letter.isupper()]
+			foundQ = 'Q' in relevant
+			foundK = 'K' in relevant
+		elif color == 'Black':
+			relevant = [letter for letter in fen_data[9] if letter.islower()]
+			foundQ = 'q' in relevant
+			foundK = 'k' in relevant
+		if not foundQ and not foundK:
+			# Find King piece and mark it has moved
+			for piece in self.player.pieces:
+				if piece.type == "King":
+					piece.has_moved = True
+					break
+		elif foundK and not foundQ:
+			# King and kingside rook hasn't moved, find rook that isn't kingside
+			for piece in [p for p in self.player.pieces if piece.type == "Rook"]:
+				if not (piece.file == 'h' and piece.rank == 1):
+					piece.has_moved = True
+		elif foundQ and not foundK:
+			# King and queenside rook hasn't moved, find rook that isn't queenside
+			for piece in [p for p in self.player.pieces if piece.type == "Rook"]:
+				if not (piece.file == 'a' and piece.rank == 1):
+					piece.has_moved = True
+			

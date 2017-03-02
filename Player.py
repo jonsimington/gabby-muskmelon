@@ -16,6 +16,7 @@ class Chess_Player:
 			self.rank_direction = 1
 		elif color == "Black":
 			self.rank_direction = -1 
+		self.en_passant_target = ""
 		self.threat_squares = {}
 
 	def set_opponent(self, opponent):
@@ -93,6 +94,8 @@ class Chess_Player:
 									move.set_piece_captured = opp_piece
 									break
 							possible_moves.append(move)
+				elif self.en_passant_target != "":
+					pass
 			if piece.file != 'a':
 				space = self.check_space(chr(ord(piece.file) - 1), piece.rank + self.rank_direction)
 				if space[1] == 1:
@@ -330,6 +333,8 @@ class Chess_Player:
 		return (True, 0)
 
 	def move_piece(self, piece, file, rank, promotion, undo_has_moved=False):
+		if self.en_passant_target != "":
+			self.en_passant_target = ""
 		piece.move_piece(file, rank, promotion, undo_has_moved)
 
 	def get_threat_squares(self):

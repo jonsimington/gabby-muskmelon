@@ -31,4 +31,7 @@ class Chess_Move:
 		return True
 
 	def output_string(self):
-		print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank))
+		if self.promotion != "":
+			print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank) + ", Promoted to " + self.promotion)
+		else:
+			print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank))

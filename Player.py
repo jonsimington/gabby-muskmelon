@@ -22,7 +22,7 @@ class Chess_Player:
 	def set_opponent(self, opponent):
 		self.opponent = opponent
 
-	def get_moves_piece(self, piece, last_move=None, threat_search=False):
+	def get_moves_piece(self, piece, threat_search=False):
 		possible_moves = []
 		if piece.type == "Pawn":
 			# Normal
@@ -46,7 +46,7 @@ class Chess_Player:
 					if self.check_space(piece.file, piece.rank + 2 * self.rank_direction)[0]:
 						possible_moves.append(Chess_Move(piece, piece.file, piece.rank, piece.file, piece.rank + 2 * self.rank_direction, ""))
 
-			# Check diagonal spaces and En Passante
+			# Check diagonal spaces
 			if piece.file != 'h': 
 				space = self.check_space(chr(ord(piece.file) + 1), piece.rank + self.rank_direction)
 				if space[1] == 1:
@@ -83,19 +83,6 @@ class Chess_Player:
 				elif space[1] == 0 and threat_search:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "", note="blocked"))
 
-				# En passant to the right
-				if last_move != None:
-					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
-						if last_move.to_rank == piece.rank and ord(last_move.to_file) - ord(piece.file) == 1:
-							move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) + 1), piece.rank + self.rank_direction, "")
-							# Find enemy pawn that would be captured
-							for opp_piece in self.opponent.pieces:
-								if opp_piece.file == chr(ord(piece.file) + 1) and opp_piece.rank == piece.rank + self.rank_direction:
-									move.set_piece_captured = opp_piece
-									break
-							possible_moves.append(move)
-				elif self.en_passant_target != "":
-					pass
 			if piece.file != 'a':
 				space = self.check_space(chr(ord(piece.file) - 1), piece.rank + self.rank_direction)
 				if space[1] == 1:
@@ -132,17 +119,17 @@ class Chess_Player:
 				elif space[1] == 0 and threat_search:
 					possible_moves.append(Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "", note="blocked"))
 
-				# En passant to the left
-				if last_move != None:
-					if last_move.piece.type == "Pawn" and abs(last_move.from_rank - last_move.to_rank) == 2:
-						if last_move.to_rank == piece.rank and ord(piece.file) - ord(last_move.to_file) == 1:
-							move = Chess_Move(piece, piece.file, piece.rank, chr(ord(piece.file) - 1), piece.rank + self.rank_direction, "")
-							# Find enemy pawn that would be captured
-							for opp_piece in self.opponent.pieces:
-								if opp_piece.file == chr(ord(piece.file) + 1) and opp_piece.rank == piece.rank + self.rank_direction:
-									move.set_piece_captured = opp_piece
-									break
-							possible_moves.append(move)
+			# Check en passant target square
+			if self.en_passant_target != "":
+				if piece.rank + self.rank_direction == int(self.en_passant_target[1]) and abs(ord(piece.file) - ord(self.en_passant_target[0])) == 1:
+					move = Chess_Move(piece, piece.file, piece.rank, self.en_passant_target[0], int(self.en_passant_target[1]), "")
+					# Find opponent piece that was captured
+					for opp_piece in self.opponent.pieces:
+						if opp_piece.type == "Pawn":
+							if opp_piece.file == self.en_passant_target[0] and opp_piece.rank - self.opponent.rank_direction == int(self.en_passant_target[1]):
+								move.set_piece_captured(opp_piece)
+								break
+					possible_moves.append(move)
 		elif piece.type == "Rook":
 			self.find_verhor_moves(possible_moves, threat_search, piece)
 		elif piece.type == "Knight":
@@ -228,12 +215,45 @@ class Chess_Player:
 				# Make move
 				move = possible_moves[x]
 				init_pos = move.piece.has_moved
+				en_passant_save = self.en_passant_target
 				self.move_piece(move.piece, move.to_file, move.to_rank, move.promotion)
+				castling_origin = {}
+
+				# If castling, move Rook piece as well
+				if move.piece.type == "King":
+					if ord(move.from_file) - ord(move.to_file) == 2:
+						# Left-side castling, find rook to move as well
+						for r_piece in self.pieces:
+							if r_piece.type == "Rook":
+								if r_piece.file == 'a':
+									castling_origin["piece"] = r_piece
+									castling_origin["file"] = r_piece.file
+									castling_origin["rank"] = r_piece.rank
+									self.move_piece(r_piece, 'd', r_piece.rank, "")
+					elif ord(move.to_file) - ord(move.from_file) == 2:
+						# Right side castling, find rook to move as well
+						for r_piece in self.pieces:
+							if r_piece.type == "Rook":
+								if r_piece.file == 'h':
+									castling_origin["piece"] = r_piece
+									castling_origin["file"] = r_piece.file
+									castling_origin["rank"] = r_piece.rank
+									self.move_piece(r_piece, 'f', r_piece.rank, "")   
+
 				# Remove captured piece
 				captured_piece = None
 				if move.captured != None:
 					for i in range(len(self.opponent.pieces)):
 						opp_piece = self.opponent.pieces[i]
+
+						# Check if en passant
+						if en_passant_save != "":
+							if opp_piece.file == en_passant_save[0] and opp_piece.rank == int(en_passant_save[1]):
+								captured_piece = move.captured
+								del self.opponent.pieces[i]
+								break
+
+						# Regular capture
 						if opp_piece.file == move.captured.file and opp_piece.rank == move.captured.rank:
 							captured_piece = move.captured
 							del self.opponent.pieces[i]
@@ -255,10 +275,17 @@ class Chess_Player:
 						self.move_piece(move.piece, move.from_file, move.from_rank, "", undo_has_moved=True)
 					else:
 						self.move_piece(move.piece, move.from_file, move.from_rank, "")
-				# Replace any captured pieces
 				
+				# Undo Rook part of castling
+				if len(castling_origin) != 0:
+					self.move_piece(castling_origin["piece"], castling_origin["file"], castling_origin["rank"], "", undo_has_moved=True)
+
+				# Replace any captured pieces
 				if captured_piece != None:
 					self.opponent.pieces.append(captured_piece)
+
+				# Replace en_passant_target variable
+				self.en_passant_target = en_passant_save
 				
 				# Check if threat spaces include king space
 				if check_caused:
@@ -353,17 +380,7 @@ class Chess_Player:
 						if not space_str in threats:
 							threats[space_str] = piece
 
-		# Need a way to include capturing turns that still keep you in threat
 		return threats
 
 	def update_threat_squares(self):
 		self.threat_squares = self.get_threat_squares()
-
-	def get_checking_piece(self):
-		# Find king piece
-		for piece in self.pieces:
-			if piece.type == "King":
-				space_str = piece.file + str(piece.rank)
-				break
-		threats = self.get_threat_squares()
-		return threats[space_str]

@@ -5,6 +5,7 @@ import random
 
 from Piece import Chess_Piece
 from Player import Chess_Player
+from Player import NewMiniMax
 from Game import Chess_Game
 
 
@@ -125,48 +126,33 @@ class AI(BaseAI):
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
-        # 4) make a random valid move.
-        all_moves = []
-        for piece in self.game_obj.player.pieces:
-            possible_moves = self.game_obj.player.get_moves_piece(piece)
-            for move in possible_moves:
-                all_moves.append(move)
-
-        random_move = random.choice(all_moves)
-
-        random_piece = random_move.piece
-        piece_moves = [m for m in all_moves if m.piece == random_piece]
-        
-        print("Possible Moves:")
-        for m in piece_moves:
-            m.output_string()
-        print("Chosen Move:")
-        random_move.output_string()
+        next_move = NewMiniMax(self.game_obj.player, 2);
 
         # Find Framework Game Piece to Move
         for piece in self.player.pieces:
-            if piece.type != random_piece.type:
+            if piece.rank != next_move.from_rank:
                 continue
-            if piece.rank != random_piece.rank:
+            if piece.file != next_move.from_file:
                 continue
-            if piece.file != random_piece.file:
+            if piece.type != next_move.piece.type and next_move.promotion == "":
                 continue
-            if random_move.promotion != "":
-                piece.move(random_move.to_file, random_move.to_rank, random_move.promotion)
+            if next_move.promotion != "" and piece.type == "Pawn":
+                piece.move(next_move.to_file, next_move.to_rank, next_move.promotion)
+                break
             else:
-                piece.move(random_move.to_file, random_move.to_rank)
-            break
+                piece.move(next_move.to_file, next_move.to_rank)
+                break
 
         # Check for castling
-        if random_move.piece.type == "King":
-            if ord(random_move.from_file) - ord(random_move.to_file) == 2:
+        if next_move.piece.type == "King":
+            if ord(next_move.from_file) - ord(next_move.to_file) == 2:
                 # Left-side castling, find rook to move as well
                 for r_piece in self.game_obj.player.pieces:
                     if r_piece.type == "Rook":
                         if r_piece.file == 'a':
                             self.game_obj.player.move_piece(r_piece, 'd', r_piece.rank, "")
                             break
-            elif ord(random_move.to_file) - ord(random_move.from_file) == 2:
+            elif ord(next_move.to_file) - ord(next_move.from_file) == 2:
                 # Right side castling, find rook to move as well
                 for r_piece in self.game_obj.player.pieces:
                     if r_piece.type == "Rook":
@@ -174,11 +160,21 @@ class AI(BaseAI):
                             self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")
                             break
 
-        self.game_obj.player.move_piece(random_piece, random_move.to_file, random_move.to_rank, random_move.promotion)
+        # Find piece on our side
+        for x in range(len(self.game_obj.player.pieces)):
+            piece = self.game_obj.player.pieces[x]
+            if next_move.promotion == "":
+                if piece.file == next_move.from_file and piece.rank == next_move.from_rank and piece.type == next_move.piece.type:
+                    self.game_obj.player.move_piece(piece, next_move.to_file, next_move.to_rank, next_move.promotion)
+                    break
+            else:
+                if piece.file == next_move.from_file and piece.rank == next_move.from_rank and piece.type == "Pawn" and next_move.promotion == next_move.piece.type:
+                    self.game_obj.player.move_piece(piece, next_move.to_file, next_move.to_rank, next_move.promotion)
+                    break
         
         # Remove any opponent captured pieces
-        if random_move.captured != None:
-            captured_piece = random_move.captured
+        if next_move.captured != None:
+            captured_piece = next_move.captured
             for x in range(len(self.game_obj.player.opponent.pieces)):
                 piece = self.game_obj.player.opponent.pieces[x]
                 if piece.type == captured_piece.type and piece.rank == captured_piece.rank and piece.file == captured_piece.file:

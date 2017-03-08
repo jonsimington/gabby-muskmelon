@@ -2,6 +2,166 @@
 # Player Class
 
 from Move import Chess_Move
+from Piece import copy_piece
+import random
+
+def NewMiniMax(player, depth):
+	moves = player.get_all_moves() # Get Max player possible moves
+	best_move = []
+	best_eval = -9999.0
+	for move in moves:
+		pos_move = apply_move(player, move)
+		max_eval = MinMove(pos_move, depth - 1) # Apply move, call MinMove
+		if max_eval > best_eval:
+			best_move = [move]
+			best_eval = max_eval
+		elif max_eval == best_eval:
+			if len(best_move) > 0:
+				best_move.append(move)
+			else:
+				best_move = [move]
+	choice_move = random.choice(best_move)
+	choice_move.output_string()
+	return choice_move
+
+
+def MaxMove(player, depth):
+	if player.game_ended() or depth == 0:
+		return player.get_eval(player.color)
+	else:
+		best_score = -9999.0
+		moves = player.get_all_moves() # Get MAX POssible MOVEs
+		for move in moves:
+			result_state = apply_move(player, move)
+			result_move = MinMove(result_state, depth - 1) # Apply move to MAX, call MIN
+			if result_move > best_score:
+				best_score = result_move
+		return best_score
+
+def MinMove(player, depth):
+	if player.game_ended() or depth == 0:
+		return player.get_eval(player.opponent.color)
+	else:
+		best_score = 9999.0
+		moves = player.opponent.get_all_moves() 
+		moveStr = ""
+		for move in moves:
+			result_state = apply_move(player, move, on_opponent=True)
+			result_move = MaxMove(result_state, depth - 1) # Apply move to MIN, call MAX
+			if result_move < best_score:
+				best_score = result_move
+		return best_score
+
+
+def apply_move(player, move, on_opponent=False):
+	new_player = copy_player_state(player)
+	
+	if on_opponent:
+		piece_set = new_player.opponent.pieces
+		opp_set = new_player.pieces
+	else:
+		piece_set = new_player.pieces
+		opp_set = new_player.opponent.pieces
+	
+	# Find move.piece for new state
+	for piece in piece_set:
+		if piece.type == move.piece.type and piece.rank == move.piece.rank and piece.file == move.piece.file:
+			move.piece = piece
+			break
+
+	if not move.piece in piece_set:
+		print("------ERROR IN APPLY MOVE FIND Move.piece", on_opponent)
+
+	if move.captured != None:
+		#print("CAPTURED PIECE", move.captured.type, move.captured.file, str(move.captured.rank))
+		for piece in opp_set:
+			if piece.type == move.captured.type and piece.rank == move.captured.rank and piece.file == move.captured.file:
+				move.captured = piece
+				break
+
+		if not move.captured in opp_set:
+			print("------ERROR IN APPLY MOVE Move.captured", on_opponent)
+			print("------", move.from_file, move.from_rank, move.to_file, move.to_rank, move.piece.type)
+
+	# Check for castling
+	if move.piece.type == "King":
+		if ord(move.from_file) - ord(move.to_file) == 2:
+			for r_piece in piece_set:
+				if r_piece.type == "Rook":
+					if r_piece.file == 'a':
+						if on_opponent:
+							new_player.opponent.move_piece(r_piece, 'd', r_piece.rank, "")
+						else:
+							new_player.move_piece(r_piece, 'd', r_piece.rank, "")
+						break
+		elif ord(move.to_file) - ord(move.from_file) == 2:
+			for r_piece in piece_set:
+				if r_piece.type == "Rook":
+					if r_piece.file == 'h':
+						if on_opponent:
+							new_player.opponent.move_piece(r_piece, 'f', r_piece.rank, "")
+						else:
+							new_player.move_piece(r_piece, 'f', r_piece.rank, "")
+						break
+	# Actual Move
+	if on_opponent:
+		new_player.opponent.move_piece(move.piece, move.to_file, move.to_rank, move.promotion)
+	else:
+		new_player.move_piece(move.piece, move.to_file, move.to_rank, move.promotion)
+
+	# Remove captured opponent piece
+	if move.captured != None:
+		captured_piece = move.captured
+		for x in range(len(opp_set)):
+			piece = opp_set[x]
+			if piece.type == captured_piece.type and piece.rank == captured_piece.rank and piece.file == captured_piece.file:
+				del opp_set[x]
+				break
+
+	# Update threat squares and if in check
+	if on_opponent:
+		new_player.update_threat_squares()
+		new_player.in_check = new_player.get_check_status()
+	else:
+		new_player.opponent.update_threat_squares()
+		new_player.opponent.in_check = new_player.opponent.get_check_status()
+
+	# Update if the opponent is in check
+
+	# Update en passant target (for opponent)
+	if move.piece.type == "Pawn":
+		if abs(move.to_rank - move.from_rank) == 2:
+			tar_file = move.to_file
+			if on_opponent:
+				tar_rank = move.to_rank - new_player.opponent.rank_direction
+				new_player.en_passant_target = tar_file + str(tar_rank)
+			else:
+				tar_rank = move.to_rank - new_player.rank_direction
+				new_player.opponent.en_passant_target = tar_file + str(tar_rank)
+
+	return new_player
+
+
+def copy_player_state(player):
+	new_player = Chess_Player(player.color, player.name)
+	opp_state = Chess_Player(player.opponent.color, player.opponent.name)
+	new_player.in_check = player.in_check
+	new_player.lost = player.lost
+	new_player.made_move = player.made_move
+	new_player.rank_direction = player.rank_direction
+	new_player.en_passant_target = player.en_passant_target
+	new_player.pieces = [copy_piece(p, new_player) for p in player.pieces]
+	new_player.threat_squares = {d:player.threat_squares[d] for d in player.threat_squares}
+	opp_state.in_check = player.opponent.in_check
+	opp_state.lost = player.opponent.lost
+	opp_state.made_move = player.opponent.made_move
+	opp_state.rank_direction = player.opponent.rank_direction
+	opp_state.en_passant_target = player.en_passant_target
+	opp_state.pieces = [copy_piece(p, opp_state) for p in player.opponent.pieces]
+	opp_state.threat_squares = {d:player.opponent.threat_squares[d] for d in player.opponent.threat_squares}
+	new_player.opponent = opp_state
+	opp_state.opponent = new_player
+	return new_player
 
 class Chess_Player:
 	def __init__(self, color, name):
@@ -21,6 +181,14 @@ class Chess_Player:
 
 	def set_opponent(self, opponent):
 		self.opponent = opponent
+
+	def get_all_moves(self):
+		all_moves = []
+		for piece in self.pieces:
+			possible_moves = self.get_moves_piece(piece)
+			for move in possible_moves:
+				all_moves.append(move)
+		return all_moves
 
 	def get_moves_piece(self, piece, threat_search=False):
 		possible_moves = []
@@ -209,6 +377,7 @@ class Chess_Player:
 				king_piece = piece
 				king_str = piece.file + str(piece.rank)
 				break
+
 		# Look through moves, if one puts King in check, it's not valid
 		if not threat_search:
 			for x in range(len(possible_moves) - 1, -1, -1):
@@ -362,7 +531,136 @@ class Chess_Player:
 	def move_piece(self, piece, file, rank, promotion, undo_has_moved=False):
 		if self.en_passant_target != "":
 			self.en_passant_target = ""
+		if not piece in self.pieces:
+			print("!!!!!!!!!!!!!!!ERROR IN MOVE_PIECE!!!!!!!!!!!!!!!!!", piece.type, piece.file, piece.rank)
 		piece.move_piece(file, rank, promotion, undo_has_moved)
+
+	def get_eval(self, player_color):
+		points = 0
+		for p in self.pieces:
+			if p.type == "Queen":
+				if player_color == "White":
+					if p.rank > 2:
+						points += 13.5
+					else:
+						points += 9
+				else:
+					if p.rank < 7:
+						points += 13.5
+					else:
+						points += 9
+			elif p.type == "Rook":
+				if player_color == "White":
+					if p.rank > 2:
+						points += 7.5
+					else:
+						points += 5
+				else:
+					if p.rank < 7:
+						points += 7.5
+					else:
+						points += 5
+			elif p.type == "Bishop" or p.type == "Knight":
+				if player_color == "White":
+					if p.rank > 2:
+						points += 4.5
+					else:
+						points += 3
+				else:
+					if p.rank < 7:
+						points += 4.5
+					else:
+						points += 3
+			elif p.type == "Pawn":
+				if player_color == "White":
+					if p.rank > 2:
+						points += 1.5
+					else:
+						points += 1
+				else:
+					if p.rank < 7:
+						points += 1.5
+					else:
+						points += 1
+		for p in self.opponent.pieces:
+			if p.type == "Queen":
+				if player_color == "White":
+					if p.rank < 7:
+						points -= 13.5
+					else:
+						points -= 9
+				else:
+					if p.rank > 2:
+						points -= 13.5
+					else:
+						points -= 9
+			elif p.type == "Rook":
+				if player_color == "White":
+					if p.rank < 7:
+						points -= 7.5
+					else:
+						points -= 5
+				else:
+					if p.rank > 2:
+						points -= 7.5
+					else:
+						points -= 5
+			elif p.type == "Bishop" or p.type == "Knight":
+				if player_color == "White":
+					if p.rank < 7:
+						points -= 4.5
+					else:
+						points -= 3
+				else:
+					if p.rank > 2:
+						points -= 4.5
+					else:
+						points -= 3
+
+			elif p.type == "Pawn":
+				if player_color == "White":
+					if p.rank < 7:
+						points -= 1.5
+					else:
+						points -= 1
+				else:
+					if p.rank > 2:
+						points -= 1.5
+					else:
+						points -= 1
+
+		# Points for threatened squares
+		points -= 0.25 * len(self.threat_squares)
+		points += 0.25 * len(self.opponent.threat_squares)
+
+		# Points for pieces being threatened and pieces threatened
+		for piece in self.opponent.pieces:
+			p_str = piece.file + str(piece.rank)
+			if p_str in self.opponent.threat_squares:
+				if piece.type == "King":
+					points += 12
+				elif piece.type == "Queen":
+					points += 4.5
+				elif piece.type == "Rook":
+					points += 2.5
+				elif piece.type == "Bishop" or piece.type == "Rook":
+					points += 1.5
+				elif piece.type == "Pawn":
+					points += 0.5
+		for piece in self.pieces:
+			p_str = piece.file + str(piece.rank)
+			if p_str in self.threat_squares:
+				if piece.type == "King":
+					points -= 12
+				elif piece.type == "Queen":
+					points -= 4.5
+				elif piece.type == "Rook":
+					points -= 2.5
+				elif piece.type == "Bishop" or piece.type == "Rook":
+					points -= 1.5
+				elif piece.type == "Pawn":
+					points -= 0.5
+		return points		
 
 	def get_threat_squares(self):
 		threats = {}
@@ -384,3 +682,20 @@ class Chess_Player:
 
 	def update_threat_squares(self):
 		self.threat_squares = self.get_threat_squares()
+
+	def game_ended(self):
+		# Account for draws! and stalemates!
+		for piece in self.pieces:
+			if piece.type == "King":
+				return False
+		for piece in self.opponent.pieces:
+			if piece.type == "King":
+				return False
+		return True
+
+	def get_check_status(self):
+		for piece in self.pieces:
+			if piece.type == "King":
+				king_str = piece.file + str(piece.rank)
+				break
+		return king_str in self.threat_squares

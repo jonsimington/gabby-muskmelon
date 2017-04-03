@@ -5,9 +5,10 @@ import random
 
 from Piece import Chess_Piece
 from Player import Chess_Player
-from Player import NewMiniMax
+from Player import MiniMax
 from Game import Chess_Game
 
+import cProfile, pstats, io, time
 
 class AI(BaseAI):
     """ The basic AI functions that are the same between games. """
@@ -26,6 +27,9 @@ class AI(BaseAI):
         """ This is called once the game starts and your AI knows its playerID
         and game. You can initialize your AI here.
         """
+
+        #self.pr = cProfile.Profile()
+        #self.pr.enable()
         self.game_obj = Chess_Game()
         self.game_obj.read_fen(self.game.fen, self.player.color)
         self.game_obj.player.opponent.pieces = []
@@ -39,6 +43,7 @@ class AI(BaseAI):
         tracking anything you can update it here.
         """
         self.game_obj.player.in_check = self.player.in_check
+        self.game_obj.player.opponent.in_check = self.player.opponent.in_check
 
         if len(self.game.moves) > 0 and self.game.current_player == self.player and not self.player.made_move:
             # Check if one of your own pieces were captured
@@ -73,6 +78,7 @@ class AI(BaseAI):
             for piece in self.game_obj.player.opponent.pieces:
                 if piece.rank == capture_move.from_rank and piece.file == capture_move.from_file:
                     self.game_obj.player.opponent.move_piece(piece, capture_move.to_file, capture_move.to_rank, capture_move.promotion)
+                    del self.game_obj.player.opponent.prev_moves[-1]
                     if piece.type == "King":
                         # Castling
                         if ord(capture_move.to_file) - ord(capture_move.from_file) == 2:
@@ -80,12 +86,14 @@ class AI(BaseAI):
                                 if rook.type == "Rook":
                                     if rook.file == 'h' and rook.rank == piece.rank:
                                         self.game_obj.player.opponent.move_piece(rook, chr(ord(piece.file) - 1), piece.rank, "")
+                                        del self.game_obj.player.opponent.prev_moves[-1]
                                         break
                         elif ord(capture_move.from_file) - ord(capture_move.to_file) == 2:
                             for rook in self.game_obj.player.opponent.pieces:
                                 if rook.type == "Rook":
                                     if rook.file == 'a' and rook.rank == piece.rank:
                                         self.game_obj.player.opponent.move_piece(rook, chr(ord(piece.file) + 1), piece.rank, "")
+                                        del self.game_obj.player.opponent.prev_moves[-1]
                                         break
                     break
         
@@ -102,7 +110,6 @@ class AI(BaseAI):
             reason (str): The human readable string explaining why you won or
                           lost.
         """
-
         # replace with your end logic
 
     def run_turn(self):
@@ -122,11 +129,25 @@ class AI(BaseAI):
         if len(self.game.moves) > 0:
             print("Opponent's Last Move: '" + self.game.moves[-1].san + "'")
             last_move = self.game.moves[-1]
+            self.game_obj.player.opponent.prev_moves.append({"to_file": last_move.to_file, "to_rank": last_move.to_rank, "from_file": last_move.from_file, "from_rank": last_move.from_rank})
+            while len(self.game_obj.player.opponent.prev_moves) > 4:
+                del self.game_obj.player.opponent.prev_moves[0]
+            if last_move.captured != None or last_move.piece.type == "Pawn":
+                self.game_obj.player.turns_to_draw = 100
+            else:
+                self.game_obj.player.turns_to_draw -= 1
 
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
-        next_move = NewMiniMax(self.game_obj.player, 2);
+        depth_limit = 3
+        time_limit = 7
+        start_time = time.time()
+        for depth in range(1, depth_limit + 1):
+            if time.time() - start_time < time_limit:
+                next_move = MiniMax(self.game_obj.player, depth, start_time, time_limit, -9999, 9999)
+
+        next_move.output_string()
 
         # Find Framework Game Piece to Move
         for piece in self.player.pieces:
@@ -151,6 +172,7 @@ class AI(BaseAI):
                     if r_piece.type == "Rook":
                         if r_piece.file == 'a':
                             self.game_obj.player.move_piece(r_piece, 'd', r_piece.rank, "")
+                            del self.game_obj.player.prev_moves[-1]
                             break
             elif ord(next_move.to_file) - ord(next_move.from_file) == 2:
                 # Right side castling, find rook to move as well
@@ -158,6 +180,7 @@ class AI(BaseAI):
                     if r_piece.type == "Rook":
                         if r_piece.file == 'h':
                             self.game_obj.player.move_piece(r_piece, 'f', r_piece.rank, "")
+                            del self.game_obj.player.prev_moves[-1]
                             break
 
         # Find piece on our side
@@ -171,6 +194,14 @@ class AI(BaseAI):
                 if piece.file == next_move.from_file and piece.rank == next_move.from_rank and piece.type == "Pawn" and next_move.promotion == next_move.piece.type:
                     self.game_obj.player.move_piece(piece, next_move.to_file, next_move.to_rank, next_move.promotion)
                     break
+
+        while len(self.game_obj.player.prev_moves) > 4:
+            del self.game_obj.player.prev_moves[0]
+
+        if next_move.piece.type == "Pawn" or next_move.captured != None:
+            self.game_obj.player.turns_to_draw = 100
+        else:
+            self.game_obj.player.turns_to_draw -= 1
         
         # Remove any opponent captured pieces
         if next_move.captured != None:

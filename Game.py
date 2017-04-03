@@ -85,5 +85,4 @@ class Chess_Game:
 			# King and queenside rook hasn't moved, find rook that isn't queenside
 			for piece in [p for p in self.player.pieces if piece.type == "Rook"]:
 				if not (piece.file == 'a' and piece.rank == 1):
-					piece.has_moved = True
-			
+					piece.has_moved = True	

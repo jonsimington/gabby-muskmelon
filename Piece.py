@@ -29,14 +29,5 @@ class Chess_Piece:
 		elif undo_has_moved:
 			self.has_moved = False
 
-	def check_equal(self, other):
-		if self.file != other.file:
-			return False
-		if self.rank != other.rank:
-			return False
-		if self.type != other.type:
-			return False
-		return True
-
 	def __repr__(self):
 		return self.type + " " + self.file + str(self.rank)

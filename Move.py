@@ -35,3 +35,9 @@ class Chess_Move:
 			print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank) + ", Promoted to " + self.promotion)
 		else:
 			print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank))
+
+	def __repr__(self):
+		tempStr = self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank)
+		if self.captured != None:
+			tempStr += ", capturing + " + self.captured.type
+		return tempStr

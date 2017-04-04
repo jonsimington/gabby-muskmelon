@@ -5,7 +5,7 @@ import random
 
 from Piece import Chess_Piece
 from Player import Chess_Player
-from Player import MiniMax
+from Player import IterDeepMiniMax
 from Game import Chess_Game
 
 import cProfile, pstats, io, time
@@ -140,13 +140,7 @@ class AI(BaseAI):
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
-        depth_limit = 3
-        time_limit = 7
-        start_time = time.time()
-        for depth in range(1, depth_limit + 1):
-            if time.time() - start_time < time_limit:
-                next_move = MiniMax(self.game_obj.player, depth, start_time, time_limit, -9999, 9999)
-
+        next_move = IterDeepMiniMax(self.game_obj.player, 3, 7, -9999, 9999)
         next_move.output_string()
 
         # Find Framework Game Piece to Move

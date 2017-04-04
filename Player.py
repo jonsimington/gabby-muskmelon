@@ -5,8 +5,16 @@ from Move import Chess_Move
 from Piece import copy_piece
 import random, time
 
-def MiniMax(player, depth, start_time, time_limit, alpha, beta):
-	moves = player.get_all_moves() # Get Max player possible moves
+def IterDeepMiniMax(player, max_depth, time_limit, alpha, beta):
+	start_time = time.time()
+	for depth in range(1, max_depth + 1):
+		if time.time() - start_time < time_limit:
+			next_move = DLMMiniMax(player, depth, start_time, time_limit, alpha, beta)
+	return next_move
+
+
+def DLMMiniMax(player, depth, start_time, time_limit, alpha, beta):
+	moves = player.get_all_moves()
 	best_move = []
 	best_eval = -9999.0
 	updated_alpha = alpha
@@ -23,13 +31,10 @@ def MiniMax(player, depth, start_time, time_limit, alpha, beta):
 			else:
 				best_move = [move]
 		if max_eval >= beta:
-			# Fail high, prune
 			return random.choice(best_move)
 		elif max_eval <= alpha:
-			# Fail low
 			continue
 		else:
-			# Update Alpha
 			updated_alpha = max_eval
 	return random.choice(best_move)
 
@@ -41,9 +46,8 @@ def MaxMove(player, depth, start_time, time_limit, alpha, beta):
 		best_score = -9999.0
 		updated_alpha = alpha
 		updated_beta = beta
-		moves = player.get_all_moves() # Get MAX POssible MOVEs
+		moves = player.get_all_moves()
 
-		# If player can't move, either checkmated or stalemate
 		if len(moves) == 0:
 			return player.get_eval(player.color)
 
@@ -55,13 +59,10 @@ def MaxMove(player, depth, start_time, time_limit, alpha, beta):
 			if result_move > best_score:
 				best_score = result_move
 			if result_move >= beta:
-				# Fail High on max, PRUNE
-				# Return whatever we have found that is best
 				return best_score
 			elif result_move <= alpha:
 				continue
 			else:
-				# Update Alpha
 				updated_alpha = result_move
 		return best_score
 
@@ -85,7 +86,6 @@ def MinMove(player, depth, start_time, time_limit, alpha, beta):
 			if result_move < best_score:
 				best_score = result_move
 			if result_move <= alpha:
-				# Fail Low on min, PRUNE
 				return best_score
 			elif result_move >= beta:
 				continue

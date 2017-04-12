@@ -36,6 +36,9 @@ class Chess_Move:
 		else:
 			print(self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank))
 
+	def get_hash(self):
+		return self.piece.type + self.from_file + str(self.from_rank) + self.to_file + str(self.to_rank)
+
 	def __repr__(self):
 		tempStr = self.piece.type + " at " + self.from_file + str(self.from_rank) + " to " + self.to_file + str(self.to_rank)
 		if self.captured != None:

@@ -3,10 +3,10 @@
 
 from Move import Chess_Move
 from Piece import copy_piece
-import random, time
+import random, time, heapq
 
 def IterDeepMiniMax(player, max_depth, max_q_depth, time_limit, alpha, beta):
-	history_table = {}
+	history_table = {"White": {}, "Black": {}}
 	start_time = time.time()
 	for depth in range(1, max_depth + 1):
 		if time.time() - start_time < time_limit:
@@ -16,88 +16,211 @@ def IterDeepMiniMax(player, max_depth, max_q_depth, time_limit, alpha, beta):
 
 def DLMMiniMax(player, depth, q_depth, start_time, time_limit, alpha, beta, history_table):
 	moves = player.get_all_moves()
+	before_hash = player.get_hash()
 	best_move = []
 	best_eval = -9999.0
+	best_hash = []
 	updated_alpha = alpha
 	updated_beta = beta
-	for move in moves:
+	ordered_moves = []
+	count = 0
+	if before_hash in history_table[player.color]:
+		for move in moves:
+			move_hash = move.get_hash()
+			if move_hash in history_table[player.color][before_hash]:
+				heapq.heappush(ordered_moves, (history_table[player.color][before_hash][move_hash], count, move))
+			else:
+				heapq.heappush(ordered_moves, (0, count, move))
+			count += 1
+	else:
+		for move in moves:
+			ordered_moves.append((0, count, move))
+			count += 1
+
+	while len(ordered_moves) != 0:
+		move = heapq.heappop(ordered_moves)[2]
 		pos_move = apply_move(player, move)
-		max_eval = MinMove(pos_move, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
+		max_eval = MinMove(pos_move, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta, history_table)
 		if max_eval > best_eval:
 			best_move = [move]
 			best_eval = max_eval
+			best_hash = [move.get_hash()]
 		elif max_eval == best_eval:
 			if len(best_move) > 0:
 				best_move.append(move)
+				best_hash.append(move.get_hash())
 			else:
 				best_move = [move]
+				best_hash = [move.get_hash()]
 		if max_eval >= updated_beta:
-			return random.choice(best_move)
+			# Update History table
+			after_hash = move.get_hash()
+			if not before_hash in history_table[player.color]:
+				history_table[player.color][before_hash] = {}
+				history_table[player.color][before_hash][after_hash] = -1
+			else:
+				if not after_hash in history_table[player.color][before_hash]:
+					history_table[player.color][before_hash][after_hash] = -1
+				else:
+					history_table[player.color][before_hash][after_hash] -= 1
+			return move		
 		elif max_eval <= updated_alpha:
 			continue
 		else:
 			updated_alpha = max_eval
-	return random.choice(best_move)
+
+	chosen_move = random.choice(best_move)
+	for x in range(len(best_move)):
+		move = best_move[x]
+		if move == chosen_move:
+			# Update history table
+			if not before_hash in history_table[player.color]:
+				history_table[player.color][before_hash] = {}
+				history_table[player.color][before_hash][best_hash[x]] = -1
+			else:
+				if not best_hash[x] in history_table[player.color][before_hash]:
+					history_table[player.color][before_hash][best_hash[x]] = -1
+				else:
+					history_table[player.color][before_hash][best_hash[x]] -= 1
+			return move
 
 
-def MaxMove(player, depth, q_depth, start_time, time_limit, alpha, beta):
+def MaxMove(player, depth, q_depth, start_time, time_limit, alpha, beta, history_table):
 	if depth == 0 and (player.get_quietness() or q_depth == 0):
 		return player.get_eval(player.color)
 	else:
 		best_score = -9999.0
+		best_move = ""
+		before_hash = player.get_hash()
 		updated_alpha = alpha
 		updated_beta = beta
 		moves = player.get_all_moves()
+		ordered_moves = []
+		count = 0
 
 		if len(moves) == 0:
-			return player.get_eval(player.color)
+			return player.get_eval(player.color, no_moves=True)
 
-		for move in moves:
+		if before_hash in history_table[player.color]:
+			for move in moves:
+				move_hash = move.get_hash()
+				if move_hash in history_table[player.color][before_hash]:
+					heapq.heappush(ordered_moves, (history_table[player.color][before_hash][move_hash], count, move))
+				else:
+					heapq.heappush(ordered_moves, (0, count, move))
+				count += 1
+		else:
+			for move in moves:
+				ordered_moves.append((0, count, move))
+				count += 1
+
+		while len(ordered_moves) != 0:
+			move = heapq.heappop(ordered_moves)[2]
+
 			if time.time() - start_time >= time_limit:
 				return best_score
 			result_state = apply_move(player, move)
 			if depth == 0:
-				result_move = MinMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+				result_move = MinMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta, history_table)
 			else:
-				result_move = MinMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
+				result_move = MinMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta, history_table)
 			if result_move > best_score:
+				best_move = move.get_hash()
 				best_score = result_move
 			if result_move >= updated_beta:
+				# Update History Table
+				after_hash = move.get_hash()
+				if not before_hash in history_table[player.color]:
+					history_table[player.color][before_hash] = {}
+					history_table[player.color][before_hash][after_hash] = -1
+				else:
+					if not after_hash in history_table[player.color][before_hash]:
+						history_table[player.color][before_hash][after_hash] = -1
+					else:
+						history_table[player.color][before_hash][after_hash] -= 1
 				return best_score
 			elif result_move <= updated_alpha:
 				continue
 			else:
 				updated_alpha = result_move
+		# Update history table
+		if not before_hash in history_table[player.color]:
+			history_table[player.color][before_hash] = {}
+			history_table[player.color][before_hash][best_move] = -1
+		else:
+			if not best_move in history_table[player.color][before_hash]:
+				history_table[player.color][before_hash][best_move] = -1
+			else:
+				history_table[player.color][before_hash][best_move] -= 1
 		return best_score
 
-def MinMove(player, depth, q_depth, start_time, time_limit, alpha, beta):
+def MinMove(player, depth, q_depth, start_time, time_limit, alpha, beta, history_table):
 	if depth == 0 and (player.opponent.get_quietness() or q_depth == 0):
 		return player.get_eval(player.opponent.color)
 	else:
 		best_score = 9999.0
+		before_hash = player.opponent.get_hash()
+		best_move = ""
 		updated_alpha = alpha
 		updated_beta = beta
-		moves = player.opponent.get_all_moves() 
+		moves = player.opponent.get_all_moves()
+		ordered_moves = []
+		count = 0
 		
 		if len(moves) == 0:
-			return player.get_eval(player.opponent.color)
+			return player.get_eval(player.opponent.color, no_moves=True)
 
-		for move in moves:
+		if before_hash in history_table[player.opponent.color]:
+			for move in moves:
+				move_hash = move.get_hash()
+				if move_hash in history_table[player.opponent.color][before_hash]:
+					heapq.heappush(ordered_moves, (history_table[player.opponent.color][before_hash][move_hash], count, move))
+				else:
+					heapq.heappush(ordered_moves, (0, count, move))
+				count += 1
+		else:
+			for move in moves:
+				ordered_moves.append((0, count, move))
+				count += 1
+
+		while len(ordered_moves) != 0:
+			move = heapq.heappop(ordered_moves)[2]
+
 			if time.time() - start_time >= time_limit:
 				return best_score
 			result_state = apply_move(player, move, on_opponent=True)
 			if depth == 0:
-				result_move = MaxMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+				result_move = MaxMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta, history_table)
 			else:
-				result_move = MaxMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
+				result_move = MaxMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta, history_table)
 			if result_move < best_score:
 				best_score = result_move
+				best_move = move.get_hash()
 			if result_move <= updated_alpha:
+				# Update history table
+				after_hash = move.get_hash()
+				if not before_hash in history_table[player.opponent.color]:
+					history_table[player.opponent.color][before_hash] = {}
+					history_table[player.opponent.color][before_hash][after_hash] = -1
+				else:
+					if not after_hash in history_table[player.opponent.color][before_hash]:
+						history_table[player.opponent.color][before_hash][after_hash] = -1
+					else:
+						history_table[player.opponent.color][before_hash][after_hash] -= 1
 				return best_score
 			elif result_move >= updated_beta:
 				continue
 			else:
 				updated_beta = result_move
+		# Update history table
+		if not before_hash in history_table[player.opponent.color]:
+			history_table[player.opponent.color][before_hash] = {}
+			history_table[player.opponent.color][before_hash][best_move] = -1
+		else:
+			if not best_move in history_table[player.opponent.color][before_hash]:
+				history_table[player.opponent.color][before_hash][best_move] = -1
+			else:
+				history_table[player.opponent.color][before_hash][best_move] -= 1
 		return best_score
 
 
@@ -492,12 +615,14 @@ class Chess_Player:
 						if en_passant_save != "":
 							if opp_piece.file == en_passant_save[0] and opp_piece.rank == int(en_passant_save[1]):
 								captured_piece = move.captured
+								captured_index = i
 								del self.opponent.pieces[i]
 								break
 
 						# Regular capture
 						if opp_piece.file == move.captured.file and opp_piece.rank == move.captured.rank:
 							captured_piece = move.captured
+							captured_index = i
 							del self.opponent.pieces[i]
 							break
 				
@@ -526,7 +651,7 @@ class Chess_Player:
 
 				# Replace any captured pieces
 				if captured_piece != None:
-					self.opponent.pieces.append(captured_piece)
+					self.opponent.pieces.insert(captured_index, captured_piece)
 
 				# Replace en_passant_target variable
 				self.en_passant_target = en_passant_save
@@ -611,8 +736,24 @@ class Chess_Player:
 			self.en_passant_target = ""
 		piece.move_piece(file, rank, promotion, undo_has_moved)
 
-	def get_eval(self, player_color):
+	def get_eval(self, player_color, no_moves=False):
 		points = 0
+
+		if no_moves:
+			if self.color == player_color:
+				if self.in_check:
+					# Checkmated
+					return -1000
+				else:
+					# Stalemate
+					return 0
+			else:
+				if self.opponent.in_check:
+					# Opponent Checkmated
+					return 1000
+				else:
+					# Will Cause Stalemate
+					return 0
 
 		# Return 0 for stalemate causing states
 		if len(self.prev_moves) == len(self.opponent.prev_moves) and len(self.prev_moves) == 4:
@@ -763,8 +904,25 @@ class Chess_Player:
 				return False
 		return True
 
+	def get_hash(self):
+		hash_str = ""
+		if self.color == "White":
+			for piece in self.pieces:
+				tmpchr = "N" if piece.type == "Knight" else piece.type[0]
+				hash_str += tmpchr + piece.file + str(piece.rank)
+			for piece in self.opponent.pieces:
+				tmpchr = "n" if piece.type == "Knight" else piece.type[0].lower()
+				hash_str += tmpchr + piece.file + str(piece.rank)
+		else:
+			for piece in self.pieces:
+				tmpchr = "n" if piece.type == "Knight" else piece.type[0].lower()
+				hash_str += tmpchr + piece.file + str(piece.rank)
+			for piece in self.opponent.pieces:
+				tmpchr = "N" if piece.type == "Knight" else piece.type[0]
+				hash_str += tmpchr + piece.file + str(piece.rank)
+		return hash_str
+
 	def get_threat_squares(self):
-		
 		threats = {}
 		for piece in self.opponent.pieces:
 			piece_moves = self.opponent.get_moves_piece(piece, threat_search=True)

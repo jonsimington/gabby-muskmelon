@@ -5,15 +5,16 @@ from Move import Chess_Move
 from Piece import copy_piece
 import random, time
 
-def IterDeepMiniMax(player, max_depth, time_limit, alpha, beta):
+def IterDeepMiniMax(player, max_depth, max_q_depth, time_limit, alpha, beta):
+	history_table = {}
 	start_time = time.time()
 	for depth in range(1, max_depth + 1):
 		if time.time() - start_time < time_limit:
-			next_move = DLMMiniMax(player, depth, start_time, time_limit, alpha, beta)
+			next_move = DLMMiniMax(player, depth, max_q_depth, start_time, time_limit, alpha, beta, history_table)
 	return next_move
 
 
-def DLMMiniMax(player, depth, start_time, time_limit, alpha, beta):
+def DLMMiniMax(player, depth, q_depth, start_time, time_limit, alpha, beta, history_table):
 	moves = player.get_all_moves()
 	best_move = []
 	best_eval = -9999.0
@@ -21,7 +22,7 @@ def DLMMiniMax(player, depth, start_time, time_limit, alpha, beta):
 	updated_beta = beta
 	for move in moves:
 		pos_move = apply_move(player, move)
-		max_eval = MinMove(pos_move, depth - 1, start_time, time_limit, updated_alpha, updated_beta) # Apply move, call MinMove
+		max_eval = MinMove(pos_move, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
 		if max_eval > best_eval:
 			best_move = [move]
 			best_eval = max_eval
@@ -30,17 +31,17 @@ def DLMMiniMax(player, depth, start_time, time_limit, alpha, beta):
 				best_move.append(move)
 			else:
 				best_move = [move]
-		if max_eval >= beta:
+		if max_eval >= updated_beta:
 			return random.choice(best_move)
-		elif max_eval <= alpha:
+		elif max_eval <= updated_alpha:
 			continue
 		else:
 			updated_alpha = max_eval
 	return random.choice(best_move)
 
 
-def MaxMove(player, depth, start_time, time_limit, alpha, beta):
-	if depth == 0:
+def MaxMove(player, depth, q_depth, start_time, time_limit, alpha, beta):
+	if depth == 0 and (player.get_quietness() or q_depth == 0):
 		return player.get_eval(player.color)
 	else:
 		best_score = -9999.0
@@ -55,19 +56,22 @@ def MaxMove(player, depth, start_time, time_limit, alpha, beta):
 			if time.time() - start_time >= time_limit:
 				return best_score
 			result_state = apply_move(player, move)
-			result_move = MinMove(result_state, depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+			if depth == 0:
+				result_move = MinMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+			else:
+				result_move = MinMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
 			if result_move > best_score:
 				best_score = result_move
-			if result_move >= beta:
+			if result_move >= updated_beta:
 				return best_score
-			elif result_move <= alpha:
+			elif result_move <= updated_alpha:
 				continue
 			else:
 				updated_alpha = result_move
 		return best_score
 
-def MinMove(player, depth, start_time, time_limit, alpha, beta):
-	if depth == 0:
+def MinMove(player, depth, q_depth, start_time, time_limit, alpha, beta):
+	if depth == 0 and (player.opponent.get_quietness() or q_depth == 0):
 		return player.get_eval(player.opponent.color)
 	else:
 		best_score = 9999.0
@@ -82,12 +86,15 @@ def MinMove(player, depth, start_time, time_limit, alpha, beta):
 			if time.time() - start_time >= time_limit:
 				return best_score
 			result_state = apply_move(player, move, on_opponent=True)
-			result_move = MaxMove(result_state, depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+			if depth == 0:
+				result_move = MaxMove(result_state, depth, q_depth - 1, start_time, time_limit, updated_alpha, updated_beta)
+			else:
+				result_move = MaxMove(result_state, depth - 1, q_depth, start_time, time_limit, updated_alpha, updated_beta)
 			if result_move < best_score:
 				best_score = result_move
-			if result_move <= alpha:
+			if result_move <= updated_alpha:
 				return best_score
-			elif result_move >= beta:
+			elif result_move >= updated_beta:
 				continue
 			else:
 				updated_beta = result_move
@@ -184,6 +191,12 @@ def apply_move(player, move, on_opponent=False):
 				tar_rank = move.to_rank - new_player.rank_direction
 				new_player.opponent.en_passant_target = tar_file + str(tar_rank)
 
+	# Update last move
+	if on_opponent:
+		new_player.opponent.last_move = move
+	else:
+		new_player.last_move = move
+
 	return new_player
 
 
@@ -199,6 +212,8 @@ def copy_player_state(player):
 	new_player.pieces = [copy_piece(p, new_player) for p in player.pieces]
 	new_player.threat_squares = {d:player.threat_squares[d] for d in player.threat_squares}
 	new_player.prev_moves = [d.copy() for d in player.prev_moves]
+	new_player.last_move = player.last_move
+	
 	opp_state.in_check = player.opponent.in_check
 	opp_state.lost = player.opponent.lost
 	opp_state.made_move = player.opponent.made_move
@@ -208,6 +223,8 @@ def copy_player_state(player):
 	opp_state.pieces = [copy_piece(p, opp_state) for p in player.opponent.pieces]
 	opp_state.threat_squares = {d:player.opponent.threat_squares[d] for d in player.opponent.threat_squares}
 	opp_state.prev_moves = [d.copy() for d in player.opponent.prev_moves]
+	opp_state.last_move = player.opponent.last_move
+	
 	new_player.opponent = opp_state
 	opp_state.opponent = new_player
 	return new_player
@@ -229,6 +246,7 @@ class Chess_Player:
 		self.threat_squares = {}
 		self.turns_to_draw = 100
 		self.prev_moves = []
+		self.last_move = None
 
 	def set_opponent(self, opponent):
 		self.opponent = opponent
@@ -737,7 +755,13 @@ class Chess_Player:
 				elif piece.type == "Pawn":
 					points -= 0.5 * len(self.threat_squares[p_str])
 
-		return points		
+		return points	
+
+	def get_quietness(self):
+		if self.opponent.last_move != None:
+			if self.opponent.last_move.captured != None:
+				return False
+		return True
 
 	def get_threat_squares(self):
 		

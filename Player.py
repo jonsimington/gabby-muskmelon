@@ -299,9 +299,13 @@ def apply_move(player, move, on_opponent=False):
 	if on_opponent:
 		new_player.update_threat_squares()
 		new_player.in_check = new_player.get_check_status()
+		new_player.opponent.update_threat_squares()
+		new_player.opponent.in_check = new_player.opponent.get_check_status()
 	else:
 		new_player.opponent.update_threat_squares()
 		new_player.opponent.in_check = new_player.opponent.get_check_status()
+		new_player.update_threat_squares()
+		new_player.in_check = new_player.get_check_status()
 
 	# Update en passant target (for opponent)
 	if move.piece.type == "Pawn":
@@ -857,8 +861,8 @@ class Chess_Player:
 						points -= 1
 
 		# Points for threatened squares
-		points -= 0.25 * len(self.threat_squares)
-		points += 0.25 * len(self.opponent.threat_squares)
+		points -= 0.05 * len(self.threat_squares)
+		points += 0.05 * len(self.opponent.threat_squares)
 
 		# Points for pieces being threatened and pieces threatened
 		for piece in self.opponent.pieces:
@@ -871,13 +875,13 @@ class Chess_Player:
 					elif threat_king >= 2:
 						points += 50
 				elif piece.type == "Queen":
-					points += 4.5 * len(self.opponent.threat_squares[p_str])
+					points += 1.125 * len(self.opponent.threat_squares[p_str])
 				elif piece.type == "Rook":
-					points += 2.5 * len(self.opponent.threat_squares[p_str])
+					points += 0.625 * len(self.opponent.threat_squares[p_str])
 				elif piece.type == "Bishop" or piece.type == "Rook":
-					points += 1.5 * len(self.opponent.threat_squares[p_str])
+					points += 0.375 * len(self.opponent.threat_squares[p_str])
 				elif piece.type == "Pawn":
-					points += 0.5 * len(self.opponent.threat_squares[p_str])
+					points += 0.125 * len(self.opponent.threat_squares[p_str])
 		for piece in self.pieces:
 			p_str = piece.file + str(piece.rank)
 			if p_str in self.threat_squares:
@@ -888,13 +892,13 @@ class Chess_Player:
 					elif threat_king >= 2:
 						points -= 50
 				elif piece.type == "Queen":
-					points -= 4.5 * len(self.threat_squares[p_str])
+					points -= 1.125 * len(self.threat_squares[p_str])
 				elif piece.type == "Rook":
-					points -= 2.5 * len(self.threat_squares[p_str])
+					points -= 0.625 * len(self.threat_squares[p_str])
 				elif piece.type == "Bishop" or piece.type == "Rook":
-					points -= 1.5 * len(self.threat_squares[p_str])
+					points -= 0.375 * len(self.threat_squares[p_str])
 				elif piece.type == "Pawn":
-					points -= 0.5 * len(self.threat_squares[p_str])
+					points -= 0.125 * len(self.threat_squares[p_str])
 
 		return points	
 

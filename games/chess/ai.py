@@ -140,7 +140,7 @@ class AI(BaseAI):
         # 3) print how much time remaining this AI has to calculate moves
         print("Time Remaining: " + str(self.player.time_remaining) + " ns")
 
-        next_move = IterDeepMiniMax(self.game_obj.player, 3, 2, 7, -9999, 9999)
+        next_move = IterDeepMiniMax(self.game_obj.player, 3, 2, 11, -9999, 9999)
         next_move.output_string()
 
         # Find Framework Game Piece to Move

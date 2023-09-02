@@ -21,7 +21,7 @@ class AI(BaseAI):
             str: The name of your Player.
         """
 
-        return "pawnsftw-patrick_bremehr"
+        return "Gabby Muskmelon"
 
     def start(self):
         """ This is called once the game starts and your AI knows its playerID
@@ -53,7 +53,7 @@ class AI(BaseAI):
                 # Find and Remove piece from our list
                 piece_found = False
                 for x in range(len(self.game_obj.player.pieces)):
-                    piece = self.game_obj.player.pieces[x]    
+                    piece = self.game_obj.player.pieces[x]
                     if piece.type == captured_piece.type and piece.file == capture_move.to_file and piece.rank == capture_move.to_rank:
                         del self.game_obj.player.pieces[x]
                         piece_found = True
@@ -96,7 +96,7 @@ class AI(BaseAI):
                                         del self.game_obj.player.opponent.prev_moves[-1]
                                         break
                     break
-        
+
         # Update the current squares being threatened by opponent's pieces
         self.game_obj.player.update_threat_squares()
 
@@ -123,7 +123,7 @@ class AI(BaseAI):
 
         # 1)print the board to the console
         self.print_current_board()
-        
+
         # 2) print the opponent's last move to the console
         last_move = None
         if len(self.game.moves) > 0:
@@ -196,7 +196,7 @@ class AI(BaseAI):
             self.game_obj.player.turns_to_draw = 100
         else:
             self.game_obj.player.turns_to_draw -= 1
-        
+
         # Remove any opponent captured pieces
         if next_move.captured != None:
             captured_piece = next_move.captured
